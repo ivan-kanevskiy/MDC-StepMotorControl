@@ -4,7 +4,7 @@
 const int USER_LED = PC13; 
 
 void setup() {
-
+  Serial1.begin(1000000);
   pinMode(USER_LED, OUTPUT);
   encoder_setup();
 }
