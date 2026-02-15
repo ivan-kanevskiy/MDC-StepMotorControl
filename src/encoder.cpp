@@ -28,39 +28,40 @@ void encoder_setup()
     TIM4->CNT = 0;        
     TIM4->CR1 = 1;        
 
-    Serial.println("STM32 Hardware Encoder Started!");
+    MySerial.println("STM32 Hardware Encoder Started!");
 }
 
 void encoder_loop()
 {
-    // Static variables keep their value between function calls
     static uint32_t last_check_time = 0;
-    static uint16_t last_count = 0;
+    static int16_t last_count = 0; // Changed to signed!
 
-    // ASYNC TIMING: Only run this block every 50 milliseconds
-    // This allows the rest of your program to run freely in the meantime
     if (millis() - last_check_time >= 50) 
     {
-        last_check_time = millis(); // Reset the timer
+        last_check_time = millis();
 
-        // Read the background hardware register
-        uint16_t raw_count = TIM4->CNT;
+        // 1. Cast the hardware register to a SIGNED 16-bit integer
+        int16_t raw_count = (int16_t)TIM4->CNT;
 
-        // ASYNC EVENT: Only process and print if the encoder actually moved!
         if (raw_count != last_count) 
         {
-            last_count = raw_count; // Save the new position
+            last_count = raw_count;
 
-            // Your math calculations
-            uint16_t constrained_count = raw_count % 14400;
-            float angle = (float)constrained_count * (360.0 / 14400.0);
+            // 2. Calculate continuous angle (can go negative!)
+            float angle = (float)raw_count * (360.0 / 14400.0);
 
-            // Print the results
-            Serial.print("Raw Count: ");
-            Serial.print(raw_count);
-            Serial.print(" | Angle: ");
-            Serial.print(angle, 2);
-            Serial.println(" degrees");
+            // 3. Optional: Constrain the angle purely between 0.00 and 359.99
+            // If you want it to act like a compass instead of a continuous dial
+            float constrained_angle = fmod(angle, 360.0);
+            if (constrained_angle < 0) {
+                constrained_angle += 360.0;
+            }
+
+            MySerial.print("Raw Count: ");
+            MySerial.print(raw_count);
+            MySerial.print(" | Angle: ");
+            MySerial.print(constrained_angle, 2);
+            MySerial.println(" degrees");
         }
     }
 }
