@@ -70,9 +70,10 @@ void handleNotFound(AsyncWebServerRequest *request)
 {
     request->send(404, "text/plain", "File Not Found");
 }
-
+bool LAN_connected = false;
 void WebServerInit()
 {
+    LAN_connected = false;
     digitalWrite(led, 0);
 #ifdef debug
     MySerial.println("Requesting IP from router via DHCP...");
@@ -85,29 +86,39 @@ void WebServerInit()
         MySerial.println("Failed to configure Ethernet using DHCP!");
 #endif
     }
+    else
+    {
+        LAN_connected = true;
+    }
 
-    ws.onEvent(onWsEvent);
-    server.addHandler(&ws);
-    server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
-              { handleRoot(request); });
-    server.on("/script.js", HTTP_GET, [](AsyncWebServerRequest *request)
-              { request->send(200, "text/javascript", javascript); });
-    server.onNotFound(handleNotFound);
-    server.begin();
+    if (LAN_connected)
+    {
+        ws.onEvent(onWsEvent);
+        server.addHandler(&ws);
+        server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
+                  { handleRoot(request); });
+        server.on("/script.js", HTTP_GET, [](AsyncWebServerRequest *request)
+                  { request->send(200, "text/javascript", javascript); });
+        server.onNotFound(handleNotFound);
+        server.begin();
 #ifdef debug
-    MySerial.print(F("HTTP WebServer is @ IP : "));
-    MySerial.println(Ethernet.localIP()); // Print the IP assigned by your router
+        MySerial.print(F("HTTP WebServer is @ IP : "));
+        MySerial.println(Ethernet.localIP()); // Print the IP assigned by your router
 #endif
+    }
 }
 
 unsigned long lastWsUpdate = 0;
 
 void webServerUpdateLoop()
 {
-    if (ws.count() > 0 && (millis() - lastWsUpdate > 100))
+    if (LAN_connected)
     {
-        lastWsUpdate = millis();
-        webServerBroadcastStatus();
+        if (ws.count() > 0 && (millis() - lastWsUpdate > 100))
+        {
+            lastWsUpdate = millis();
+            webServerBroadcastStatus();
+        }
+        ws.cleanupClients();
     }
-    ws.cleanupClients();
 }

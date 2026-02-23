@@ -29,7 +29,19 @@ void encoder_setup()
     MySerial.println("STM32 Hardware Encoder Started!");
 #endif
 }
-
+String get16BitBinary(int16_t val) {
+    String binStr = "";
+    // Loop through all 16 bits from left (15) to right (0)
+    for (int i = 15; i >= 0; i--) {
+        // bitRead checks if the specific bit is a 1 or a 0
+        if (bitRead(val, i)) {
+            binStr += "1";
+        } else {
+            binStr += "0";
+        }
+    }
+    return binStr;
+}
 void encoder_loop()
 {
     static uint32_t last_check_time = 0;
@@ -51,7 +63,7 @@ void encoder_loop()
                 TIM4->CNT = 0;
                 raw_count = (int16_t)TIM4->CNT;
             }
-            MySerial.println("0000" + String(raw_count, BIN));
+            MySerial.println(get16BitBinary(raw_count));
 
             float angle = (float)raw_count * (360.0 / 14400.0);
 
