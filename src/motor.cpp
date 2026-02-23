@@ -43,10 +43,14 @@ void mottor_loop()
     static bool RunButonTimer = millis();
     bool currentCalibrateStateButon = digitalRead(MotorCalibrate);
     bool currentRunStateButon = digitalRead(MotorRun);
-    if (calibration == false || (currentCalibrateStateButon == HIGH && lastCalibrateStateButon == LOW && (millis() - CalibrateButonTimer >= 100)))
+    if (currentCalibrateStateButon == HIGH && lastCalibrateStateButon == LOW && (millis() - CalibrateButonTimer >= 100))
+    {
+        calibration = true;
+        CalibrateButonTimer = millis();
+    }
+    if (calibration == true)
     {
         calibrate_encoder();
-        CalibrateButonTimer = millis();
     }
     if (currentRunStateButon == HIGH && lastRunStateButon == LOW && (millis() - RunButonTimer >= 100))
     {
@@ -56,11 +60,12 @@ void mottor_loop()
     if (runMotor == true)
     {
         MoveMottor();
-    }else
+    }
+    else
     {
         stepper.stop();
     }
-    
+
     lastCalibrateStateButon = currentCalibrateStateButon;
     lastRunStateButon = currentRunStateButon;
     stepper.run();

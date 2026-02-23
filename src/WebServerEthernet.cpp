@@ -74,25 +74,31 @@ bool LAN_connected = false;
 void WebServerInit()
 {
     LAN_connected = false;
+    auto status = Ethernet.linkStatus();
+    if (status == LinkON)
+    {
+        LAN_connected = true;
+    }
+    else if (status == LinkOFF)
+    {
+        LAN_connected = false;
+    }
     digitalWrite(led, 0);
 #ifdef debug
     MySerial.println("Requesting IP from router via DHCP...");
 #endif
     // Initialize Ethernet with DHCP by only passing the MAC address
     // This function returns 0 if it fails to get an IP
-    if (Ethernet.begin(mac) == 0)
-    {
-#ifdef debug
-        MySerial.println("Failed to configure Ethernet using DHCP!");
-#endif
-    }
-    else
-    {
-        LAN_connected = true;
-    }
 
     if (LAN_connected)
     {
+        if (Ethernet.begin(mac) == 0)
+        {
+            LAN_connected = false;
+#ifdef debug
+            MySerial.println("Failed to configure Ethernet using DHCP!");
+#endif
+        }
         ws.onEvent(onWsEvent);
         server.addHandler(&ws);
         server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
