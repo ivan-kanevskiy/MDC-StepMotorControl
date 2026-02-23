@@ -4,4 +4,6 @@
 
 extern HardwareSerial MySerial;
 
+//#define debug
+
 #endif
